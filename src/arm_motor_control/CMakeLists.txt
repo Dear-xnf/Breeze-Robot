@@ -5,12 +5,12 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# C++17
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
-# find dependencies ros依赖
+
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -18,14 +18,12 @@ find_package(std_srvs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(robot_msg REQUIRED)
 
-#c++头文件
 
 include_directories(
   include
   ${rclcpp_INCLUDE_DIRS}
 )
 
-# 库路径
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
 
@@ -37,8 +35,6 @@ add_executable(arm_motor_control_node
     )
 
 
-
-# ==========依赖连接============
 
 ament_target_dependencies(arm_motor_control_node
   rclcpp
@@ -52,21 +48,17 @@ target_link_libraries(arm_motor_control_node
     controlcan
 )
 
-
-
 install(TARGETS
   arm_motor_control_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
-# 安装动态库
 install(FILES
   lib/libcontrolcan.so
   DESTINATION lib/${PROJECT_NAME}
 )
 
 
-#加载库变量环境
 set_target_properties(arm_motor_control_node PROPERTIES
   BUILD_RPATH ${CMAKE_CURRENT_SOURCE_DIR}/lib
   INSTALL_RPATH "$ORIGIN"

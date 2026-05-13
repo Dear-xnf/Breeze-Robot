@@ -140,7 +140,6 @@ private:
     const auto &traj = current_goal_handle_->get_goal()->trajectory;
     double elapsed = (this->now() - traj_start_time_).seconds();
 
-    // 修正：正确查找当前时间对应的轨迹段
     size_t idx = 0;
     for (; idx < traj.points.size(); ++idx)
     {
@@ -148,7 +147,6 @@ private:
       if (elapsed <= t_pt) break;
     }
 
-    // 轨迹走完
     if (idx >= traj.points.size())
     {
       auto result = std::make_shared<FollowJointTrajectory::Result>();
@@ -159,7 +157,6 @@ private:
       return;
     }
 
-    // 首尾保护
     if (idx == 0) idx = 1;
     const auto &p_prev = traj.points[idx-1];
     const auto &p_curr = traj.points[idx];
