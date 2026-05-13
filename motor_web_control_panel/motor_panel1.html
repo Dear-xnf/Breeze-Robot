@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>ROS2 电机控制器 - 局域网自动连接</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/roslib@1/build/roslib.min.js"></script>
+    <script src="roslib.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 30px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 95%;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #00000020;
+        }
+
+        .title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #222;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        button {
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            background: #007bff;
+            color: white;
+        }
+
+        button.danger {
+            background: #dc3545;
+        }
+
+        button.send {
+            background: #28a745;
+            padding: 12px 24px;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background: #007bff;
+            color: white;
+        }
+
+        input[type="number"] {
+            width: 100px;
+            padding: 6px;
+            text-align: center;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .row-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .tip {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #28a745;
+            height: 20px;
+        }
+
+        .auto-send {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 15px;
+        }
+
+        .auto-send input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .auto-send label {
+            font-weight: normal;
+        }
+
+        .auto-send input.hz {
+            width: 60px;
+        }
+
+        .status-bar {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #444;
+        }
+
+
+        .info-box {
+            margin-top: 25px;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.5;
+        }
+
+
+        .state-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .motor-card {
+            flex: 1;
+            min-width: 300px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px 15px;
+            box-shadow: 0 2px 4px #00000010;
+        }
+
+        .motor-card h4 {
+            margin: 0 0 8px 0;
+            color: #007bff;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .state-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 6px 0;
+            font-size: 14px;
+            align-items: center;
+        }
+
+        .state-label {
+            color: #555;
+            font-weight: bold;
+        }
+
+        .state-value {
+            color: #222;
+            font-family: monospace;
+            font-size: 15px;
+        }
+
+
+        .gauge-container {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        .gauge {
+            width: 120px;
+            height: 120px;
+            position: relative;
+        }
+
+        .gauge-circle {
+            width: 100%;
+            height: 100%;
+            border: 6px solid #e0e0e0;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .gauge-needle {
+            width: 3px;
+            height: 45%;
+            background: #e74c3d;
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: center bottom;
+            transform: translateX(-50%) rotate(0deg);
+            border-radius: 2px;
+            transition: transform 0.1s linear;
+        }
+
+        .gauge-center {
+            width: 10px;
+            height: 10px;
+            background: #333;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+
+        .dual-progress {
+            width: 100%;
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            position: relative;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-left, .progress-right {
+            position: absolute;
+            height: 100%;
+            top: 0;
+            transition: all 0.15s ease;
+        }
+
+        .progress-left {
+            right: 50%;
+            background: linear-gradient(to left, #ff9800, #f44336);
+        }
+
+        .progress-right {
+            left: 50%;
+            background: linear-gradient(to right, #ff9800, #f44336);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="title">Breeze Robot 电机控制面板</h1>
+
+        <div class="controls">
+            <button onclick="addRow()">➕ 增加一行</button>
+            <button onclick="removeRow()" class="danger">➖ 删除最后一行</button>
+
+            <div class="auto-send">
+                <input type="checkbox" id="autoSendCheck">
+                <label for="autoSendCheck">自动发送</label>
+                <input type="number" class="hz" id="autoHz" value="10" min="1" max="100">
+                <span>Hz</span>
+            </div>
+        </div>
+
+        <div class="status-bar" id="status">
+            连接状态：等待连接...
+        </div>
+
+
+        <div id="motorStatePanel" class="state-container">
+            <p style="width:100%;">⏳ 等待电机状态数据...</p>
+        </div>
+
+        <table id="motorTable">
+            <thead>
+                <tr>
+                    <th>电机ID</th>
+                    <th>模式</th>
+                    <th>位置 (rad)</th>
+                    <th>速度 (rad/s)</th>
+                    <th>扭矩 (N·m)</th>
+                    <th>KP</th>
+                    <th>KD</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+
+        <button class="send" onclick="sendCommand()">✅ 发送指令</button>
+        <div class="tip" id="sendTip"></div>
+
+
+        <div class="info-box">
+            说明：本界面用于电机实时监控与控制，支持位置/速度/扭矩实时显示、指针仪表、双向进度条指示。<br>
+            电机控制模式：<br>
+            0：失能<br>
+            1：MIT<br>
+            2：位置<br>
+            3：速度<br>
+            4：力位混空<br>
+        </div>
+
+    </div>
+
+    <script>
+
+        const hostIP = window.location.hostname;
+        let rosBridgeUrl;
+
+        if (hostIP === "" || hostIP === "file://") {
+            rosBridgeUrl = "ws://127.0.0.1:9090";
+        } else {
+            rosBridgeUrl = `ws://${hostIP}:9090`;
+        }
+
+
+        var ros = new ROSLIB.Ros({ url: rosBridgeUrl });
+
+        ros.on('connection', function() {
+            document.getElementById('status').textContent = `✅ 已连接到 ROS2 ：${rosBridgeUrl}`;
+            document.getElementById('status').style.color = 'green';
+        });
+
+        ros.on('error', function(error) {
+            document.getElementById('status').textContent = `❌ 连接失败：${rosBridgeUrl}`;
+            document.getElementById('status').style.color = 'red';
+        });
+
+        ros.on('close', function() {
+            document.getElementById('status').textContent = `🔌 断开连接：${rosBridgeUrl}`;
+            document.getElementById('status').style.color = 'orange';
+        });
+
+
+        var motor_pub = new ROSLIB.Topic({
+            ros: ros,
+            name: '/robot/arm_joint_cmd',
+            messageType: 'robot_msg/msg/MotorCmd'
+        });
+
+
+        var joint_state_sub = new ROSLIB.Topic({
+            ros: ros,
+            name: '/robot/arm_joint_state',
+            messageType: 'sensor_msgs/msg/JointState'
+        });
+
+        let lastMotorCount = 0;
+
+        joint_state_sub.subscribe(function(msg) {
+            let names = msg.name || [];
+            let positions = msg.position || [];
+            let velocities = msg.velocity || [];
+            let efforts = msg.effort || [];
+            let count = names.length;
+
+            let panel = document.getElementById('motorStatePanel');
+
+            if (count !== lastMotorCount) {
+                panel.innerHTML = '';
+                lastMotorCount = count;
+
+                for (let i = 0; i < count; i++) {
+                    let card = document.createElement('div');
+                    card.className = 'motor-card';
+                    card.innerHTML = `
+                        <h4>${names[i] || 'Motor ' + (i + 1)}</h4>
+
+                        <div class="state-row">
+                            <span class="state-label">位置</span>
+                            <span class="state-value" id="pos_${i}">0.0000</span>
+                        </div>
+                        <div class="gauge-container">
+                            <div class="gauge">
+                                <div class="gauge-circle"></div>
+                                <div class="gauge-needle" id="needle_${i}"></div>
+                                <div class="gauge-center"></div>
+                            </div>
+                        </div>
+
+                        <div class="state-row">
+                            <span class="state-label">速度</span>
+                            <span class="state-value" id="vel_${i}">0.0000</span>
+                        </div>
+                        <div class="dual-progress">
+                            <div class="progress-left" id="vel_l_${i}"></div>
+                            <div class="progress-right" id="vel_r_${i}"></div>
+                        </div>
+
+                        <div class="state-row">
+                            <span class="state-label">扭矩</span>
+                            <span class="state-value" id="eff_${i}">0.0000</span>
+                        </div>
+                        <div class="dual-progress">
+                            <div class="progress-left" id="eff_l_${i}"></div>
+                            <div class="progress-right" id="eff_r_${i}"></div>
+                        </div>
+                    `;
+                    panel.appendChild(card);
+                }
+            }
+
+
+            for (let i = 0; i < count; i++) {
+                let p = positions[i] ?? 0;
+                let v = velocities[i] ?? 0;
+                let e = efforts[i] ?? 0;
+
+                document.getElementById(`pos_${i}`).innerText = p.toFixed(4);
+                document.getElementById(`vel_${i}`).innerText = v.toFixed(4);
+                document.getElementById(`eff_${i}`).innerText = e.toFixed(4);
+
+                let deg = p * (180 / Math.PI);
+                document.getElementById(`needle_${i}`).style.transform = `translateX(-50%) rotate(${deg}deg)`;
+
+                updateDualProgress(`vel_l_${i}`, `vel_r_${i}`, v, 10);
+                updateDualProgress(`eff_l_${i}`, `eff_r_${i}`, e, 5);
+            }
+        });
+
+
+        function updateDualProgress(leftId, rightId, value, maxAbs) {
+            let left = document.getElementById(leftId);
+            let right = document.getElementById(rightId);
+            if (!left || !right) return;
+
+            let per = Math.min(Math.abs(value) / maxAbs, 1) * 50;
+
+            if (value < 0) {
+                left.style.width = per + "%";
+                right.style.width = "0%";
+            } else {
+                right.style.width = per + "%";
+                left.style.width = "0%";
+            }
+        }
+
+        var autoSendTimer = null;
+
+ 
+        function createRow(id = 1, mode = 1) {
+            let tr = document.createElement('tr');
+
+            tr.innerHTML = `
+                <td><input type="number" class="id" value="${id}" min="1" max="32"></td>
+                <td><input type="number" class="mode" value="${mode}" min="0" max="4"></td>
+
+                <td>
+                    <div class="row-container">
+                        <input type="range" class="pos-slider" min="-6.28" max="6.28" step="0.01" value="0">
+                        <input type="number" class="pos" value="0" step="0.05">
+                    </div>
+                </td>
+
+                <td>
+                    <div class="row-container">
+                        <input type="range" class="vel-slider" min="-30" max="30" step="0.01" value="0">
+                        <input type="number" class="vel" value="0" step="0.05">
+                    </div>
+                </td>
+
+                <td>
+                    <div class="row-container">
+                        <input type="range" class="tor-slider" min="-10" max="10" step="0.01" value="0">
+                        <input type="number" class="tor" value="0" step="0.05">
+                    </div>
+                </td>
+
+                <td>
+                    <div class="row-container">
+                        <input type="range" class="kp-slider" min="0" max="10" step="0.01" value="0">
+                        <input type="number" class="kp" value="0" step="0.1">
+                    </div>
+                </td>
+
+                <td>
+                    <div class="row-container">
+                        <input type="range" class="kd-slider" min="0" max="5" step="0.01" value="0">
+                        <input type="number" class="kd" value="0" step="0.05">
+                    </div>
+                </td>
+            `;
+
+            let sliders = tr.querySelectorAll('input[type="range"]');
+            sliders.forEach(s => {
+                s.addEventListener('input', function() {
+                    let numInput = this.parentElement.querySelector('input[type="number"]');
+                    numInput.value = this.value;
+                });
+            });
+
+            let numbers = tr.querySelectorAll('input[type="number"]');
+            numbers.forEach(n => {
+                n.addEventListener('input', function() {
+                    let slider = this.parentElement.querySelector('input[type="range"]');
+                    if (slider) slider.value = this.value;
+                });
+            });
+
+            return tr;
+        }
+
+        function addRow() {
+            let rows = document.querySelectorAll('#tableBody tr');
+            let newId = rows.length + 1;
+            document.getElementById('tableBody').appendChild(createRow(newId, 1));
+        }
+
+        function removeRow() {
+            let body = document.getElementById('tableBody');
+            if (body.children.length > 1) body.removeChild(body.lastChild);
+        }
+
+
+        function sendCommand() {
+            let rows = document.querySelectorAll('#tableBody tr');
+            let commands = [];
+
+            rows.forEach(row => {
+                let id = parseInt(row.querySelector('.id').value);
+                let mode = parseInt(row.querySelector('.mode').value);
+                let pos = parseFloat(row.querySelector('.pos').value);
+                let vel = parseFloat(row.querySelector('.vel').value);
+                let tor = parseFloat(row.querySelector('.tor').value);
+                let kp = parseFloat(row.querySelector('.kp').value);
+                let kd = parseFloat(row.querySelector('.kd').value);
+
+                commands.push({ id, mode, position: pos, velocity: vel, torque: tor, kp, kd });
+            });
+
+            motor_pub.publish({ commands });
+            document.getElementById('sendTip').textContent = "✅ 发送成功！";
+            setTimeout(() => document.getElementById('sendTip').textContent = "", 1500);
+        }
+
+
+        function updateAutoSend() {
+            let check = document.getElementById('autoSendCheck').checked;
+            let hz = parseFloat(document.getElementById('autoHz').value) || 10;
+            let interval = 1000 / hz;
+
+            if (autoSendTimer) { clearInterval(autoSendTimer); autoSendTimer = null; }
+            if (check) { autoSendTimer = setInterval(sendCommand, interval); }
+        }
+
+        document.getElementById('autoSendCheck').onchange = updateAutoSend;
+        document.getElementById('autoHz').onchange = updateAutoSend;
+
+        window.onload = () => addRow();
+    </script>
+</body>
+</html>
